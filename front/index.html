@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificador de Senha</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+    <h2>Verificador de Segurança de Senha</h2>
+    <input type="password" id="senha" placeholder="Digite sua senha">
+    <div id="gamificacao-container">
+        <h3>Desafio:</h3>
+        <p id="passo-descricao">Digite uma senha com pelo menos 12 caracteres.</p>
+        <p id="passo-feedback"></p>
+        <div id="progresso-barra">
+            <div id="progresso"></div>
+        </div>
+    </div>
+
+    <h3>Resultado:</h3>
+    <p><strong>Classificação:</strong> <span id="classificacao">-</span></p>
+    <ul>
+        <li id="li-comprimento" class="oculto">Comprimento ≥ 12: <span id="comprimento">❌</span></li>
+        <li id="li-maiuscula" class="oculto">Letra maiúscula: <span id="maiuscula">❌</span></li>
+        <li id="li-minuscula" class="oculto">Letra minúscula: <span id="minuscula">❌</span></li>
+        <li id="li-numero" class="oculto">Número: <span id="numero">❌</span></li>
+        <li id="li-simbolo" class="oculto">Símbolo: <span id="simbolo">❌</span></li>
+        <li id="li-repeticoes" class="oculto">Sem muitas repetições: <span id="repeticoes">❌</span></li>
+        <li id="li-comum" class="oculto">Não é comum/fraca: <span id="comum">❌</span></li>
+    </ul>
+
+    <script>
+        // Critérios gamificados em ordem
+        const criterios = [
+            {
+                id: 'comprimento',
+                descricao: 'Digite uma senha com pelo menos 12 caracteres.',
+                validar: senha => senha.length >= 12,
+                erro: 'A senha precisa ter pelo menos 12 caracteres.'
+            },
+            {
+                id: 'maiuscula',
+                descricao: 'Adicione pelo menos uma letra maiúscula.',
+                validar: senha => /[A-Z]/.test(senha),
+                erro: 'Inclua pelo menos uma letra maiúscula.'
+            },
+            {
+                id: 'minuscula',
+                descricao: 'Adicione pelo menos uma letra minúscula.',
+                validar: senha => /[a-z]/.test(senha),
+                erro: 'Inclua pelo menos uma letra minúscula.'
+            },
+            {
+                id: 'numero',
+                descricao: 'Adicione pelo menos um número.',
+                validar: senha => /\d/.test(senha),
+                erro: 'Inclua pelo menos um número.'
+            },
+            {
+                id: 'simbolo',
+                descricao: 'Adicione pelo menos um símbolo especial.',
+                validar: senha => /[!@#$%^&*(),.?":{}|<>]/.test(senha),
+                erro: 'Inclua pelo menos um símbolo especial.'
+            },
+            {
+                id: 'repeticoes',
+                descricao: 'Evite muitas repetições do mesmo caractere.',
+                validar: senha => {
+                    if (!senha) return false;
+                    const maxRep = Math.max(...Array.from(new Set(senha)).map(c => senha.split(c).length - 1));
+                    return maxRep <= senha.length / 2;
+                },
+                erro: 'Evite repetir muito o mesmo caractere.'
+            },
+            {
+                id: 'comum',
+                descricao: 'Não use senhas comuns ou fracas.',
+                validar: senha => {
+                    const fracas = ['123456', 'password', 'qwerty', 'abc123', 'senha123'];
+                    const padroes = [/^\d{6,}$/, /^(.)\1{5,}$/, /^(qwerty|asdfgh|zxcvbn|12345|abcdef)$/];
+                    if (fracas.includes(senha.toLowerCase())) return false;
+                    if (padroes.some(p => p.test(senha.toLowerCase()))) return false;
+                    return true;
+                },
+                erro: 'Evite senhas comuns ou padrões fracos.'
+            },
+            {
+                id: 'sequencia',
+                descricao: 'Evite sequências de teclado (ex: "qwerty", "asdf").',
+                validar: senha => !/(qwerty|asdf|zxcv|1234|abcd|7890|0987)/i.test(senha),
+                erro: 'Evite sequências de teclado.'
+            },
+            {
+                id: 'data',
+                descricao: 'Não use datas (ex: "2023", "01011990").',
+                validar: senha => !/(19\d{2}|20\d{2}|0[1-9]|1[0-2])[0-3][0-9]/.test(senha),
+                erro: 'Evite datas na senha.'
+            },
+            {
+                id: 'nome',
+                descricao: 'Não use seu nome na senha.',
+                validar: senha => {
+                    const nome = 'usuario'; // Troque por lógica dinâmica se desejar
+                    return !senha.toLowerCase().includes(nome);
+                },
+                erro: 'Evite usar seu nome na senha.'
+            }
+        ];
+
+        function atualizarGamificacao() {
+            const senha = document.getElementById('senha').value;
+            let passo = 0;
+            while (passo < criterios.length && criterios[passo].validar(senha)) {
+                passo++;
+            }
+            // Atualiza descrição do passo
+            const passoDescricao = document.getElementById('passo-descricao');
+            const passoFeedback = document.getElementById('passo-feedback');
+            if (passo < criterios.length) {
+                passoDescricao.innerText = criterios[passo].descricao;
+                passoFeedback.innerText = senha ? criterios[passo].erro : '';
+                passoFeedback.style.color = senha ? '#e62e2e' : '#333';
+            } else {
+                passoDescricao.innerText = 'Parabéns! Sua senha passou por todos os desafios!';
+                passoFeedback.innerText = '';
+            }
+            // Atualiza barra de progresso
+            const progresso = document.getElementById('progresso');
+            progresso.style.width = ((passo / criterios.length) * 100) + '%';
+            // Atualiza classificação
+            const classificacoes = ['Muito Fraca', 'Fraca', 'Moderada', 'Forte', 'Muito Forte', 'Extremamente Forte', 'Impressionante'];
+            document.getElementById('classificacao').innerText = classificacoes[Math.min(passo, classificacoes.length - 1)];
+        }
+
+        document.getElementById('senha').addEventListener('input', atualizarGamificacao);
+        atualizarGamificacao();
+    </script>
+</body>
+
+</html>
