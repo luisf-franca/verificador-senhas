@@ -18,9 +18,11 @@ SENHAS_FRACAS = {"123456", "password", "qwerty", "abc123", "senha123"}
 PADROES_FRACOS = [r"^\d{6,}$", r"^(.)\1{5,}$", r"^(qwerty|asdfgh|zxcvbn|12345|abcdef)$"]
 
 def analisar_senha(senha):
+    """Analisa a força de uma senha com base em múltiplos critérios."""
     tokens = {tipo: len(re.findall(padrao, senha)) for tipo, padrao in TOKEN_TYPES.items()}
     comprimento = len(senha)
-    repeticoes = max(senha.count(c) for c in set(senha)) > (comprimento // 2)  # Penaliza muitas repetições
+    # Penaliza se mais da metade dos caracteres forem o mesmo
+    repeticoes = max(senha.count(c) for c in set(senha)) > (comprimento // 2) if senha else False
     comum = senha.lower() in SENHAS_FRACAS or any(re.match(padrao, senha.lower()) for padrao in PADROES_FRACOS)
     
     criterios = {
@@ -45,14 +47,22 @@ def analisar_senha(senha):
     
 @app.route("/analisar", methods=["POST"])
 def api_analisar_senha():
+    """Endpoint da API para analisar a senha."""
     dados = request.get_json()
-    if "senha" not in dados:
+    if not dados or "senha" not in dados:
         return jsonify({"erro": "O campo 'senha' é obrigatório."}), 400
-    resultado = analisar_senha(dados["senha"])
+    
+    senha = dados["senha"]
+    
+    if re.search(r"\s", senha):
+        return jsonify({"erro": "A senha não pode conter espaços em branco."}), 400
+
+    resultado = analisar_senha(senha)
     return jsonify(resultado)
 
 @app.route("/")
 def home():
+    """Página inicial para verificar se a API está no ar."""
     return "API de verificação de senha está rodando!"
 
 if __name__ == "__main__":
