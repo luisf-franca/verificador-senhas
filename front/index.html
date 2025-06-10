@@ -5,33 +5,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verificador de Senha</title>
+    <!-- CSS agora está em um arquivo separado -->
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 
 <body>
     <h2>Verificador de Segurança de Senha</h2>
     <input type="password" id="senha" placeholder="Digite sua senha">
+
     <div id="gamificacao-container">
         <h3>Desafio:</h3>
         <p id="passo-descricao">Digite uma senha com pelo menos 12 caracteres.</p>
+        <!-- O erro de espaço será exibido aqui -->
         <p id="passo-feedback"></p>
         <div id="progresso-barra">
             <div id="progresso"></div>
         </div>
     </div>
 
-    <h3>Resultado:</h3>
-    <p><strong>Classificação:</strong> <span id="classificacao">-</span></p>
-    <ul>
-        <li id="li-comprimento" class="oculto">Comprimento ≥ 12: <span id="comprimento">❌</span></li>
-        <li id="li-maiuscula" class="oculto">Letra maiúscula: <span id="maiuscula">❌</span></li>
-        <li id="li-minuscula" class="oculto">Letra minúscula: <span id="minuscula">❌</span></li>
-        <li id="li-numero" class="oculto">Número: <span id="numero">❌</span></li>
-        <li id="li-simbolo" class="oculto">Símbolo: <span id="simbolo">❌</span></li>
-        <li id="li-repeticoes" class="oculto">Sem muitas repetições: <span id="repeticoes">❌</span></li>
-        <li id="li-comum" class="oculto">Não é comum/fraca: <span id="comum">❌</span></li>
-    </ul>
+    <div id="resultado-container">
+        <h3>Resultado:</h3>
+        <p><strong>Classificação:</strong> <span id="classificacao">-</span></p>
+        <ul>
+            <li id="li-comprimento" class="oculto">Comprimento ≥ 12: <span id="comprimento">❌</span></li>
+            <li id="li-maiuscula" class="oculto">Letra maiúscula: <span id="maiuscula">❌</span></li>
+            <li id="li-minuscula" class="oculto">Letra minúscula: <span id="minuscula">❌</span></li>
+            <li id="li-numero" class="oculto">Número: <span id="numero">❌</span></li>
+            <li id="li-simbolo" class="oculto">Símbolo: <span id="simbolo">❌</span></li>
+            <li id="li-repeticoes" class="oculto">Sem muitas repetições: <span id="repeticoes">❌</span></li>
+            <li id="li-comum" class="oculto">Não é comum/fraca: <span id="comum">❌</span></li>
+        </ul>
+    </div>
 
     <script>
         // Critérios gamificados em ordem
@@ -78,7 +82,7 @@
             },
             {
                 id: 'comum',
-                descricao: 'Não use senhas comuns ou fracas.',
+                descricao: 'Não use senhas comuns ou padrões fracos.',
                 validar: senha => {
                     const fracas = ['123456', 'password', 'qwerty', 'abc123', 'senha123'];
                     const padroes = [/^\d{6,}$/, /^(.)\1{5,}$/, /^(qwerty|asdfgh|zxcvbn|12345|abcdef)$/];
@@ -87,58 +91,77 @@
                     return true;
                 },
                 erro: 'Evite senhas comuns ou padrões fracos.'
-            },
-            {
-                id: 'sequencia',
-                descricao: 'Evite sequências de teclado (ex: "qwerty", "asdf").',
-                validar: senha => !/(qwerty|asdf|zxcv|1234|abcd|7890|0987)/i.test(senha),
-                erro: 'Evite sequências de teclado.'
-            },
-            {
-                id: 'data',
-                descricao: 'Não use datas (ex: "2023", "01011990").',
-                validar: senha => !/(19\d{2}|20\d{2}|0[1-9]|1[0-2])[0-3][0-9]/.test(senha),
-                erro: 'Evite datas na senha.'
-            },
-            {
-                id: 'nome',
-                descricao: 'Não use seu nome na senha.',
-                validar: senha => {
-                    const nome = 'usuario'; // Troque por lógica dinâmica se desejar
-                    return !senha.toLowerCase().includes(nome);
-                },
-                erro: 'Evite usar seu nome na senha.'
             }
         ];
+        
+        document.getElementById('senha').addEventListener('input', (event) => {
+            const senhaInput = event.target;
+            const senha = senhaInput.value;
+            const passoFeedback = document.getElementById('passo-feedback');
+            const resultadoContainer = document.getElementById('resultado-container');
+            const progressoBarra = document.getElementById('progresso-barra');
+            const passoDescricao = document.getElementById('passo-descricao');
+
+            // Valida a presença de espaços em branco primeiro.
+            if (/\s/.test(senha)) {
+                passoDescricao.style.display = 'none';
+                progressoBarra.style.display = 'none';
+                resultadoContainer.style.display = 'none';
+                
+                passoFeedback.innerText = 'A senha não pode conter espaços em branco.';
+                passoFeedback.style.color = '#e62e2e';
+                senhaInput.classList.add('erro');
+
+            } else {
+                passoDescricao.style.display = 'block';
+                progressoBarra.style.display = 'block';
+                resultadoContainer.style.display = 'block';
+
+                senhaInput.classList.remove('erro');
+                
+                atualizarGamificacao();
+            }
+        });
 
         function atualizarGamificacao() {
             const senha = document.getElementById('senha').value;
+            
+            criterios.forEach(criterio => {
+                const li = document.getElementById(`li-${criterio.id}`);
+                const span = document.getElementById(criterio.id);
+                if (li) {
+                    const valido = criterio.validar(senha);
+                    span.textContent = valido ? '✅' : '❌';
+                    li.classList.toggle('oculto', !senha);
+                }
+            });
+
             let passo = 0;
             while (passo < criterios.length && criterios[passo].validar(senha)) {
                 passo++;
             }
-            // Atualiza descrição do passo
+
             const passoDescricao = document.getElementById('passo-descricao');
             const passoFeedback = document.getElementById('passo-feedback');
+
             if (passo < criterios.length) {
                 passoDescricao.innerText = criterios[passo].descricao;
-                passoFeedback.innerText = senha ? criterios[passo].erro : '';
-                passoFeedback.style.color = senha ? '#e62e2e' : '#333';
+                passoFeedback.innerText = (senha && !criterios[passo].validar(senha)) ? criterios[passo].erro : '';
+                passoFeedback.style.color = '#e62e2e';
             } else {
                 passoDescricao.innerText = 'Parabéns! Sua senha passou por todos os desafios!';
                 passoFeedback.innerText = '';
             }
-            // Atualiza barra de progresso
+
             const progresso = document.getElementById('progresso');
             progresso.style.width = ((passo / criterios.length) * 100) + '%';
-            // Atualiza classificação
+            
             const classificacoes = ['Muito Fraca', 'Fraca', 'Moderada', 'Forte', 'Muito Forte', 'Extremamente Forte', 'Impressionante'];
-            document.getElementById('classificacao').innerText = classificacoes[Math.min(passo, classificacoes.length - 1)];
+            const classificacaoTexto = !senha ? '-' : classificacoes[Math.min(passo, classificacoes.length - 1)];
+            document.getElementById('classificacao').innerText = classificacaoTexto;
         }
 
-        document.getElementById('senha').addEventListener('input', atualizarGamificacao);
         atualizarGamificacao();
     </script>
 </body>
-
 </html>
