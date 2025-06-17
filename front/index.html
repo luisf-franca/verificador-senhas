@@ -10,158 +10,217 @@
 </head>
 
 <body>
-    <h2>Verificador de Segurança de Senha</h2>
-    <input type="password" id="senha" placeholder="Digite sua senha">
+    <h1>Verificador de Segurança de Senha</h1>
+    <div id="main-grid">
+        <div>
+            <div style="width:100%;max-width:380px;position:relative;">
+                <input type="password" id="senha" placeholder="Digite sua senha">
+                <button id="toggle-senha" type="button" aria-label="Mostrar/ocultar senha">
+                    <svg id="olho-aberto" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" style="display:inline;">
+                        <path stroke="#4f8cff" stroke-width="2" d="M1.5 12S5.5 5.5 12 5.5 22.5 12 22.5 12 18.5 18.5 12 18.5 1.5 12 1.5 12Z" />
+                        <circle cx="12" cy="12" r="3.5" stroke="#4f8cff" stroke-width="2" />
+                    </svg>
+                    <svg id="olho-fechado" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" style="display:none;">
+                        <path stroke="#4f8cff" stroke-width="2" d="M3 3l18 18M1.5 12S5.5 5.5 12 5.5c2.1 0 4.01.5 5.66 1.25M22.5 12S18.5 18.5 12 18.5c-2.1 0-4.01-.5-5.66-1.25" />
+                        <circle cx="12" cy="12" r="3.5" stroke="#4f8cff" stroke-width="2" />
+                        <path stroke="#4f8cff" stroke-width="2" d="M9.5 9.5l5 5" />
+                    </svg>
+                </button>
+            </div>
+            <div id="gamificacao-container">
+                <h3>Desafio:</h3>
+                <p id="passo-descricao">Digite uma senha com pelo menos 12 caracteres.</p>
+                <!-- O erro de espaço será exibido aqui -->
+                <p id="passo-feedback"></p>
+                <div id="progresso-barra">
+                    <div id="progresso"></div>
+                </div>
+            </div>
+        </div>
 
-    <div id="gamificacao-container">
-        <h3>Desafio:</h3>
-        <p id="passo-descricao">Digite uma senha com pelo menos 12 caracteres.</p>
-        <!-- O erro de espaço será exibido aqui -->
-        <p id="passo-feedback"></p>
-        <div id="progresso-barra">
-            <div id="progresso"></div>
+        <div id="resultado-container">
+            <h3>Resultado:</h3>
+            <p><strong>Classificação:</strong> <span id="classificacao">-</span></p>
+            <ul></ul>
         </div>
     </div>
 
-    <div id="resultado-container">
-        <h3>Resultado:</h3>
-        <p><strong>Classificação:</strong> <span id="classificacao">-</span></p>
-        <ul>
-            <li id="li-comprimento" class="oculto">Comprimento ≥ 12: <span id="comprimento">❌</span></li>
-            <li id="li-maiuscula" class="oculto">Letra maiúscula: <span id="maiuscula">❌</span></li>
-            <li id="li-minuscula" class="oculto">Letra minúscula: <span id="minuscula">❌</span></li>
-            <li id="li-numero" class="oculto">Número: <span id="numero">❌</span></li>
-            <li id="li-simbolo" class="oculto">Símbolo: <span id="simbolo">❌</span></li>
-            <li id="li-repeticoes" class="oculto">Sem muitas repetições: <span id="repeticoes">❌</span></li>
-            <li id="li-comum" class="oculto">Não é comum/fraca: <span id="comum">❌</span></li>
-        </ul>
-    </div>
-
     <script>
-        // Critérios gamificados em ordem
-        const criterios = [
-            {
-                id: 'comprimento',
-                descricao: 'Digite uma senha com pelo menos 12 caracteres.',
-                validar: senha => senha.length >= 12,
-                erro: 'A senha precisa ter pelo menos 12 caracteres.'
-            },
-            {
-                id: 'maiuscula',
-                descricao: 'Adicione pelo menos uma letra maiúscula.',
-                validar: senha => /[A-Z]/.test(senha),
-                erro: 'Inclua pelo menos uma letra maiúscula.'
-            },
-            {
-                id: 'minuscula',
-                descricao: 'Adicione pelo menos uma letra minúscula.',
-                validar: senha => /[a-z]/.test(senha),
-                erro: 'Inclua pelo menos uma letra minúscula.'
-            },
-            {
-                id: 'numero',
-                descricao: 'Adicione pelo menos um número.',
-                validar: senha => /\d/.test(senha),
-                erro: 'Inclua pelo menos um número.'
-            },
-            {
-                id: 'simbolo',
-                descricao: 'Adicione pelo menos um símbolo especial.',
-                validar: senha => /[!@#$%^&*(),.?":{}|<>]/.test(senha),
-                erro: 'Inclua pelo menos um símbolo especial.'
-            },
-            {
-                id: 'repeticoes',
-                descricao: 'Evite muitas repetições do mesmo caractere.',
-                validar: senha => {
-                    if (!senha) return false;
-                    const maxRep = Math.max(...Array.from(new Set(senha)).map(c => senha.split(c).length - 1));
-                    return maxRep <= senha.length / 2;
-                },
-                erro: 'Evite repetir muito o mesmo caractere.'
-            },
-            {
-                id: 'comum',
-                descricao: 'Não use senhas comuns ou padrões fracos.',
-                validar: senha => {
-                    const fracas = ['123456', 'password', 'qwerty', 'abc123', 'senha123'];
-                    const padroes = [/^\d{6,}$/, /^(.)\1{5,}$/, /^(qwerty|asdfgh|zxcvbn|12345|abcdef)$/];
-                    if (fracas.includes(senha.toLowerCase())) return false;
-                    if (padroes.some(p => p.test(senha.toLowerCase()))) return false;
-                    return true;
-                },
-                erro: 'Evite senhas comuns ou padrões fracos.'
-            }
+        // Função para mapear nomes amigáveis para os critérios
+        const ordemCriterios = [
+            'maiuscula',
+            'minuscula',
+            'numero',
+            'simbolo',
+            'repeticoes',
+            'comum',
+            'nao_comeca_numero',
+            'nao_termina_numero',
+            'sem_seq_letras',
+            'sem_seq_numeros',
+            'sem_repetidos_lado',
+            'dois_simbolos',
+            'dois_numeros',
+            'duas_maiusculas',
+            'duas_minusculas',
+            'sem_palavra_senha',
+            'comprimento',
+            'maiuscula_minuscula_misturado',
+            'tres_tipos',
+            'quatro_tipos',
+            'palindromo',
+            'sem_nome_usuario'
         ];
-        
-        document.getElementById('senha').addEventListener('input', (event) => {
-            const senhaInput = event.target;
-            const senha = senhaInput.value;
-            const passoFeedback = document.getElementById('passo-feedback');
-            const resultadoContainer = document.getElementById('resultado-container');
-            const progressoBarra = document.getElementById('progresso-barra');
-            const passoDescricao = document.getElementById('passo-descricao');
+        const nomesCriterios = {
+            maiuscula: 'Letra maiúscula',
+            minuscula: 'Letra minúscula',
+            numero: 'Número',
+            simbolo: 'Símbolo',
+            repeticoes: 'Sem muitas repetições',
+            comum: 'Não é comum/fraca',
+            nao_comeca_numero: 'Não começa com número',
+            nao_termina_numero: 'Não termina com número',
+            sem_seq_letras: 'Sem sequência de letras',
+            sem_seq_numeros: 'Sem sequência de números',
+            sem_repetidos_lado: 'Sem repetidos lado a lado',
+            dois_simbolos: 'Pelo menos 2 símbolos diferentes',
+            dois_numeros: 'Pelo menos 2 números diferentes',
+            duas_maiusculas: 'Pelo menos 2 letras maiúsculas',
+            duas_minusculas: 'Pelo menos 2 letras minúsculas',
+            sem_palavra_senha: 'Não contém "senha" ou "password"',
+            comprimento: 'Comprimento ≥ 12',
+            maiuscula_minuscula_misturado: 'Alternância maiúscula/minúscula',
+            tres_tipos: 'Pelo menos 3 tipos de caracteres',
+            quatro_tipos: 'Todos os tipos de caracteres',
+            palindromo: 'Não é palíndromo',
+            sem_nome_usuario: 'Não contém "usuario", "admin" ou "root"'
+        };
 
-            // Valida a presença de espaços em branco primeiro.
+        async function analisarSenhaAPI(senha) {
+            try {
+                const resp = await fetch('http://127.0.0.1:5000/analisar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senha })
+                });
+                const data = await resp.json();
+                console.log('Resposta da API:', data); // LOG para depuração
+                return data;
+            } catch (e) {
+                alert('Erro ao conectar com a API. Verifique se a API está rodando e acessível em http://127.0.0.1:5000/analisar');
+                console.error(e);
+                return { erro: 'Erro de conexão com a API.' };
+            }
+        }
+
+        const senhaInput = document.getElementById('senha');
+        const ulResultados = document.querySelector('#resultado-container ul');
+        const classificacaoSpan = document.getElementById('classificacao');
+        const progresso = document.getElementById('progresso');
+        const resultadoContainer = document.getElementById('resultado-container');
+        const passoDescricao = document.getElementById('passo-descricao');
+        const passoFeedback = document.getElementById('passo-feedback');
+        const progressoBarra = document.getElementById('progresso-barra');
+
+        async function atualizarFrontComSenha(senha) {
+            if (!senha) {
+                resultadoContainer.style.visibility = 'hidden';
+                classificacaoSpan.innerText = '-';
+                ulResultados.innerHTML = '';
+                progresso.style.width = '0%';
+                passoDescricao.style.display = 'block';
+                progressoBarra.style.display = 'block';
+                senhaInput.classList.remove('erro');
+                passoFeedback.innerText = '';
+                return;
+            } else {
+                resultadoContainer.style.visibility = 'visible';
+            }
             if (/\s/.test(senha)) {
                 passoDescricao.style.display = 'none';
                 progressoBarra.style.display = 'none';
-                resultadoContainer.style.display = 'none';
-                
+                resultadoContainer.style.opacity = '0.5';
                 passoFeedback.innerText = 'A senha não pode conter espaços em branco.';
                 passoFeedback.style.color = '#e62e2e';
                 senhaInput.classList.add('erro');
-
+                ulResultados.innerHTML = '';
+                classificacaoSpan.innerText = '-';
+                progresso.style.width = '0%';
+                return;
             } else {
                 passoDescricao.style.display = 'block';
                 progressoBarra.style.display = 'block';
-                resultadoContainer.style.display = 'block';
-
+                resultadoContainer.style.opacity = '1';
                 senhaInput.classList.remove('erro');
-                
-                atualizarGamificacao();
             }
-        });
-
-        function atualizarGamificacao() {
-            const senha = document.getElementById('senha').value;
-            
-            criterios.forEach(criterio => {
-                const li = document.getElementById(`li-${criterio.id}`);
-                const span = document.getElementById(criterio.id);
-                if (li) {
-                    const valido = criterio.validar(senha);
-                    span.textContent = valido ? '✅' : '❌';
-                    li.classList.toggle('oculto', !senha);
+            const resultado = await analisarSenhaAPI(senha);
+            if (resultado.erro) {
+                passoFeedback.innerText = resultado.erro;
+                ulResultados.innerHTML = '';
+                classificacaoSpan.innerText = '-';
+                progresso.style.width = '0%';
+                return;
+            }
+            passoFeedback.innerText = '';
+            ulResultados.innerHTML = '';
+            let atingidos = 0;
+            let total = 0;
+            ordemCriterios.forEach((chave) => {
+                if (chave === 'forte_80') return;
+                if (resultado.criterios.hasOwnProperty(chave)) {
+                    total++;
+                    if (resultado.criterios[chave]) {
+                        atingidos++;
+                        const nome = nomesCriterios[chave] || chave;
+                        const li = document.createElement('li');
+                        li.textContent = nome + ': ';
+                        const span = document.createElement('span');
+                        span.textContent = '✅';
+                        li.appendChild(span);
+                        ulResultados.appendChild(li);
+                    }
                 }
             });
-
-            let passo = 0;
-            while (passo < criterios.length && criterios[passo].validar(senha)) {
-                passo++;
-            }
-
-            const passoDescricao = document.getElementById('passo-descricao');
-            const passoFeedback = document.getElementById('passo-feedback');
-
-            if (passo < criterios.length) {
-                passoDescricao.innerText = criterios[passo].descricao;
-                passoFeedback.innerText = (senha && !criterios[passo].validar(senha)) ? criterios[passo].erro : '';
-                passoFeedback.style.color = '#e62e2e';
-            } else {
+            classificacaoSpan.innerText = resultado.classificacao;
+            progresso.style.width = ((atingidos / total) * 100) + '%';
+            // Mensagem de gamificação
+            const todosCompletos = ordemCriterios.every((chave) => resultado.criterios[chave]);
+            if (todosCompletos) {
                 passoDescricao.innerText = 'Parabéns! Sua senha passou por todos os desafios!';
-                passoFeedback.innerText = '';
+            } else {
+                // Mostra o próximo critério não atingido
+                const proximo = ordemCriterios.find((chave) => !resultado.criterios[chave]);
+                if (proximo) {
+                    passoDescricao.innerText = 'Desafio: ' + (nomesCriterios[proximo] || proximo);
+                } else {
+                    passoDescricao.innerText = '';
+                }
             }
-
-            const progresso = document.getElementById('progresso');
-            progresso.style.width = ((passo / criterios.length) * 100) + '%';
-            
-            const classificacoes = ['Muito Fraca', 'Fraca', 'Moderada', 'Forte', 'Muito Forte', 'Extremamente Forte', 'Impressionante'];
-            const classificacaoTexto = !senha ? '-' : classificacoes[Math.min(passo, classificacoes.length - 1)];
-            document.getElementById('classificacao').innerText = classificacaoTexto;
         }
 
-        atualizarGamificacao();
+        senhaInput.addEventListener('input', (event) => {
+            atualizarFrontComSenha(event.target.value);
+        });
+
+        // Chama ao carregar a página para mostrar critérios mesmo com campo vazio
+        atualizarFrontComSenha("");
+
+        // Olhinho para mostrar/ocultar senha
+        document.getElementById('toggle-senha').addEventListener('click', function () {
+            const senhaInput = document.getElementById('senha');
+            const olhoAberto = document.getElementById('olho-aberto');
+            const olhoFechado = document.getElementById('olho-fechado');
+            if (senhaInput.type === 'password') {
+                senhaInput.type = 'text';
+                olhoAberto.style.display = 'none';
+                olhoFechado.style.display = 'inline';
+            } else {
+                senhaInput.type = 'password';
+                olhoAberto.style.display = 'inline';
+                olhoFechado.style.display = 'none';
+            }
+        });
     </script>
 </body>
+
 </html>
